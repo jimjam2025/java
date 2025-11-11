@@ -1,0 +1,391 @@
+
+
+### 🧩 **Assignment 1 – MVC Design Pattern and SOLID Principles**
+
+---
+
+## **Set A**
+
+### **Q1. MVC Calculator**
+
+**Question:**
+Create a basic calculator demonstrating separation of concerns (MVC).
+Use:
+
+* **Model**: Handles data and operations
+* **Controller**: Takes input and triggers model
+* **View**: Displays output (console)
+
+**Steps to Solve:**
+
+1. Make a `CalculatorModel` to store and calculate.
+2. Make a `CalculatorApp` that reads input, processes, and displays result.
+
+**Code:**
+
+```java
+// CalculatorModel.java
+public class CalculatorModel {
+    private double num1;
+    private double num2;
+    private double result;
+
+    public void setNumbers(double a, double b) {
+        num1 = a;
+        num2 = b;
+    }
+
+    public void add() { result = num1 + num2; }
+    public void subtract() { result = num1 - num2; }
+    public void multiply() { result = num1 * num2; }
+    public void divide() { result = num1 / num2; }
+    public double getResult() { return result; }
+}
+```
+
+```java
+// CalculatorApp.java
+import java.util.Scanner;
+
+public class CalculatorApp {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        CalculatorModel model = new CalculatorModel();
+        System.out.println("Enter first number:");
+        double a = sc.nextDouble();
+        System.out.println("Enter second number:");
+        double b = sc.nextDouble();
+        System.out.println("Enter operation (+ - * /):");
+        char op = sc.next().charAt(0);
+        model.setNumbers(a, b);
+
+        switch (op) {
+            case '+': model.add(); break;
+            case '-': model.subtract(); break;
+            case '*': model.multiply(); break;
+            case '/':
+                if (b == 0) {
+                    System.out.println("Error: Division by zero");
+                    return;
+                }
+                model.divide(); break;
+            default:
+                System.out.println("Invalid operation");
+                return;
+        }
+        System.out.println("Result: " + model.getResult());
+        sc.close();
+    }
+}
+```
+
+---
+
+### **Q2. Open/Closed Principle (OCP)**
+
+**Question:**
+Refactor shapes so new shapes can be added without modifying existing code.
+
+**Steps:**
+
+1. Create `Shape` interface with `calculateArea()`.
+2. Implement `Circle`, `Square`, and `Triangle`.
+3. Use `ShapeDemo` to print all areas.
+
+**Code:**
+
+```java
+// Shape.java
+public interface Shape {
+    double calculateArea();
+}
+
+// Circle.java
+public class Circle implements Shape {
+    private double radius;
+    public Circle(double r) { radius = r; }
+    public double calculateArea() { return Math.PI * radius * radius; }
+}
+
+// Square.java
+public class Square implements Shape {
+    private double side;
+    public Square(double s) { side = s; }
+    public double calculateArea() { return side * side; }
+}
+
+// Triangle.java
+public class Triangle implements Shape {
+    private double base, height;
+    public Triangle(double b, double h) { base = b; height = h; }
+    public double calculateArea() { return 0.5 * base * height; }
+}
+
+// ShapeDemo.java
+public class ShapeDemo {
+    public static void main(String[] args) {
+        Shape c = new Circle(3.0);
+        Shape s = new Square(4.0);
+        Shape t = new Triangle(5.0, 2.0);
+        System.out.println("Circle area: " + c.calculateArea());
+        System.out.println("Square area: " + s.calculateArea());
+        System.out.println("Triangle area: " + t.calculateArea());
+    }
+}
+```
+
+---
+
+## **Set B**
+
+### **Q1. Single Responsibility Principle (SRP)**
+
+**Question:**
+Refactor a `Student` class that handles multiple responsibilities.
+
+**Steps:**
+
+1. Split into `Student`, `GradeCalculator`, `DataSaver`.
+2. Use `StudentApp` to demonstrate.
+
+**Code:**
+
+```java
+// Student.java
+public class Student {
+    private String name;
+    private double[] marks;
+
+    public Student(String name, double[] marks) {
+        this.name = name;
+        this.marks = marks;
+    }
+
+    public String getName() { return name; }
+    public double[] getMarks() { return marks; }
+}
+
+// GradeCalculator.java
+public class GradeCalculator {
+    public double calculateAverage(double[] marks) {
+        double total = 0;
+        for (double m : marks) total += m;
+        return total / marks.length;
+    }
+
+    public String findGrade(double avg) {
+        if (avg >= 90) return "A+";
+        if (avg >= 80) return "A";
+        if (avg >= 70) return "B";
+        if (avg >= 60) return "C";
+        return "F";
+    }
+}
+
+// DataSaver.java
+public class DataSaver {
+    public void saveSummary(Student s, double avg, String grade) {
+        System.out.println("Student: " + s.getName());
+        System.out.println("Average: " + avg);
+        System.out.println("Grade: " + grade);
+    }
+}
+
+// StudentApp.java
+public class StudentApp {
+    public static void main(String[] args) {
+        double[] marks = {85, 78, 92};
+        Student s = new Student("Alice", marks);
+        GradeCalculator gc = new GradeCalculator();
+        double avg = gc.calculateAverage(s.getMarks());
+        String grade = gc.findGrade(avg);
+        DataSaver ds = new DataSaver();
+        ds.saveSummary(s, avg, grade);
+    }
+}
+```
+
+---
+
+### **Q2. Interface Segregation Principle (ISP)**
+
+**Question:**
+Split one large interface into smaller specific ones.
+
+**Code:**
+
+```java
+// Workable.java
+public interface Workable { void work(); }
+public interface Feedable { void eat(); }
+public interface Restable { void sleep(); }
+public interface Payable { void getPaid(); }
+
+// HumanWorker.java
+public class HumanWorker implements Workable, Feedable, Restable, Payable {
+    public void work() { System.out.println("Human working"); }
+    public void eat() { System.out.println("Human eating"); }
+    public void sleep() { System.out.println("Human sleeping"); }
+    public void getPaid() { System.out.println("Human got paid"); }
+}
+
+// RobotWorker.java
+public class RobotWorker implements Workable, Payable {
+    public void work() { System.out.println("Robot working"); }
+    public void getPaid() { System.out.println("Robot service fee processed"); }
+}
+
+// WorkerDemo.java
+public class WorkerDemo {
+    public static void main(String[] args) {
+        HumanWorker h = new HumanWorker();
+        RobotWorker r = new RobotWorker();
+        h.work(); h.eat(); h.sleep(); h.getPaid();
+        r.work(); r.getPaid();
+    }
+}
+```
+
+---
+
+## **Set C**
+
+### **Q1. Liskov Substitution Principle (LSP)**
+
+**Code:**
+
+```java
+// Bird.java
+public class Bird {
+    private String name;
+    public Bird(String name) { this.name = name; }
+    public String getName() { return name; }
+    public void eat() { System.out.println(name + " is eating"); }
+}
+
+// Flyable.java
+public interface Flyable { void fly(); }
+
+// Sparrow.java
+public class Sparrow extends Bird implements Flyable {
+    public Sparrow(String name) { super(name); }
+    public void fly() { System.out.println(getName() + " is flying"); }
+}
+
+// Penguin.java
+public class Penguin extends Bird {
+    public Penguin(String name) { super(name); }
+    public void swim() { System.out.println(getName() + " is swimming"); }
+}
+
+// BirdDemo.java
+public class BirdDemo {
+    public static void main(String[] args) {
+        Sparrow s = new Sparrow("Jack");
+        Penguin p = new Penguin("Penny");
+        s.eat(); s.fly();
+        p.eat(); p.swim();
+    }
+}
+```
+
+---
+
+### **Q2. Full SOLID Refactoring (OrderProcessor)**
+
+**Code:**
+
+```java
+// Order.java
+public class Order {
+    private String type;
+    private double amount;
+
+    public Order(String type, double amount) {
+        this.type = type;
+        this.amount = amount;
+    }
+
+    public String getType() { return type; }
+    public double getAmount() { return amount; }
+}
+
+// OrderValidator.java
+public interface OrderValidator { boolean validate(Order o); }
+public interface PriceCalculator { double calculate(Order o); }
+public interface OrderRepository { void save(Order o); }
+public interface Notifier { void notifyCustomer(Order o); }
+
+// Implementations
+public class SimpleOrderValidator implements OrderValidator {
+    public boolean validate(Order o) { return o.getAmount() >= 0; }
+}
+
+public class DigitalPriceCalculator implements PriceCalculator {
+    public double calculate(Order o) {
+        double tax = 0.05 * o.getAmount();
+        return o.getAmount() + tax;
+    }
+}
+
+public class PhysicalPriceCalculator implements PriceCalculator {
+    public double calculate(Order o) {
+        double tax = 0.12 * o.getAmount();
+        double shipping = 50;
+        return o.getAmount() + tax + shipping;
+    }
+}
+
+public class InMemoryOrderRepository implements OrderRepository {
+    public void save(Order o) {
+        System.out.println("Order saved: " + o.getType());
+    }
+}
+
+public class EmailNotifier implements Notifier {
+    public void notifyCustomer(Order o) {
+        System.out.println("Email sent for " + o.getType());
+    }
+}
+
+// OrderProcessor.java
+public class OrderProcessor {
+    private OrderValidator validator;
+    private PriceCalculator calculator;
+    private OrderRepository repository;
+    private Notifier notifier;
+
+    public OrderProcessor(OrderValidator v, PriceCalculator c, OrderRepository r, Notifier n) {
+        validator = v; calculator = c; repository = r; notifier = n;
+    }
+
+    public void process(Order o) {
+        if (!validator.validate(o)) {
+            System.out.println("Order validation failed");
+            return;
+        }
+        double total = calculator.calculate(o);
+        repository.save(o);
+        notifier.notifyCustomer(o);
+        System.out.println("Order processed. Total: " + total);
+    }
+}
+
+// OrderProcessorDemo.java
+public class OrderProcessorDemo {
+    public static void main(String[] args) {
+        Order digital = new Order("digital", 1000);
+        Order physical = new Order("physical", 1000);
+        OrderValidator validator = new SimpleOrderValidator();
+        PriceCalculator dp = new DigitalPriceCalculator();
+        PriceCalculator pp = new PhysicalPriceCalculator();
+        OrderRepository repo = new InMemoryOrderRepository();
+        Notifier notifier = new EmailNotifier();
+
+        new OrderProcessor(validator, dp, repo, notifier).process(digital);
+        new OrderProcessor(validator, pp, repo, notifier).process(physical);
+    }
+}
+```
+
+---
