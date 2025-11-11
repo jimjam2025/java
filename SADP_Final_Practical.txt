@@ -1,0 +1,1506 @@
+@@@@@______10_Mark_______@@@@@
+
+##(1.) Implement the Singleton Pattern to create a thread-safe LoggerService class. The class 
+##should have a private constructor and a public static method to get the single instance.
+
+public class LoggerService {
+    // 1. Volatile static instance ensures visibility across threads
+    private static volatile LoggerService instance;
+
+    // 2. Private constructor prevents external instantiation
+    private LoggerService() {
+        if (instance != null) {
+            // Protect against reflection-based instantiation
+            throw new IllegalStateException("Singleton already initialized.");
+        }
+    }
+
+    // 3. Public static method for global access (Thread-Safe)
+    public static LoggerService getInstance() {
+        if (instance == null) {
+            // First check: Reduces synchronization overhead
+            synchronized (LoggerService.class) {
+                if (instance == null) {
+                    // Second check: Initializes only if null
+                    instance = new LoggerService();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public void log(String message) {
+        System.out.println("LOG [" + System.currentTimeMillis() + "]: " + message);
+    }
+}
+
+// Client Test:
+class SingletonTest {
+    public static void main(String[] args) {
+        // Both objects refer to the SAME instance
+        LoggerService logger1 = LoggerService.getInstance();
+        LoggerService logger2 = LoggerService.getInstance();
+        logger1.log("Application started.");
+        logger2.log("Configuration loaded.");
+        // Proof of Singleton: They must have the same hashcode
+        System.out.println("\nProof of Singleton: " + (logger1 == logger2));
+    }
+}
+
+
+
+##(2.) Refactor a shape area calculation logic to adhere to the Open/Closed Principle (OCP). 
+Create an abstract Shape and concrete classes for Circle, Square, and Triangle. The 
+area calculation logic should be in the concrete classes, ensuring new shapes can be 
+added without modifying existing code.
+
+// 1. Abstraction (Closed for Modification)
+interface Shape {
+    double calculateArea();
+
+}
+
+// 2. Concrete Implementation (Open for Extension)
+class Circle implements Shape {
+    private double radius;
+
+    public Circle(double r) {
+        this.radius = r;
+    }
+
+    @Override
+    public double calculateArea() {
+        return Math.PI * radius * radius;
+    }
+}
+
+// 3. Concrete Implementation (Open for Extension)
+class Square implements Shape {
+    private double side;
+
+    public Square(double s) {
+        this.side = s;
+    }
+
+    @Override
+    public double calculateArea() {
+        return side * side;
+    }
+}
+
+// 4. Client Logic (Closed for Modification)
+class AreaCalculator {
+    public double getTotalArea(Shape[] shapes) {
+        double totalArea = 0;
+        for (Shape shape : shapes) {
+            // The calculator uses the abstraction, not the concrete type
+            totalArea += shape.calculateArea();
+        }
+        return totalArea;
+    }
+}
+
+// Client Test:
+class OCPTest {
+    public static void main(String[] args) {
+        Shape[] shapes = new Shape[] {
+                new Circle(5),
+                new Square(4)
+        };
+        AreaCalculator calculator = new AreaCalculator();
+        System.out.println("Total Area: " + calculator.getTotalArea(shapes));
+        // If a new shape (e.g., Triangle) is added, AreaCalculator.java
+        // does NOT need to be modified. This satisfies OCP.
+    }
+}
+
+
+##(3.) Refactor a monolithic Student class to adhere to the Single Responsibility Principle 
+(SRP). Separate the logic into three classes: Student (data only), GradeCalculator 
+(calculates average/grade), and StudentRepository (simulates saving data to a local file)
+
+// 1. Responsibility: Data Holder
+class Student {
+    private int rollNo;
+    private String name;
+    private double marks; // Example: Average marks
+
+    public Student(int rollNo, String name, double marks) {
+        this.rollNo = rollNo;
+        this.name = name;
+        this.marks = marks;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    // Getters and Setters...
+    public double getMarks() {
+        return marks;
+    }
+
+    @Override
+    public String toString() {
+        return "Student [RollNo=" + rollNo + ", Name=" + name + "]";
+    }
+}
+
+// 2. Responsibility: Grading Logic
+class GradeCalculator {
+    public String calculateGrade(Student student) {
+        double m = student.getMarks();
+        if (m >= 75)
+            return "A+";
+        if (m >= 60)
+            return "A";
+        return "B";
+    }
+}
+
+// 3. Responsibility: Persistence (Simulated)
+class StudentRepository {
+    public void save(Student student) {
+        // Simulating saving data to a file or DB
+        System.out.println("SAVED: " + student.getName() +
+                " record to file successfully.");
+    }
+}
+
+// Client Test:
+class SRPTest {
+    public static void main(String[] args) {
+        Student s1 = new Student(101, "Amit Sharma", 82.5);
+        GradeCalculator grader = new GradeCalculator();
+        StudentRepository repo = new StudentRepository();
+        System.out.println(s1);
+        System.out.println("Grade: " + grader.calculateGrade(s1));
+        repo.save(s1);
+        // If the grading policy changes, only GradeCalculator needs modification.
+        // If the persistence mechanism changes, only StudentRepository needs
+        // modification.
+    }
+}
+
+
+##(4.) Implement the Prototype Pattern for deep cloning of objects. Create a Shape interface 
+with a clone() method. Create concrete Circle and Rectangle classes that implement 
+cloning. The client should create new instances by cloning existing ones.
+
+// Marker interface for cloning
+interface CloneableShape extends Cloneable {
+    CloneableShape clone();
+}
+
+class Dimension implements Cloneable {
+    private int value;
+
+    public Dimension(int v) {
+        this.value = v;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    // Must override clone() to enable deep copy
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+}
+
+class Circle implements CloneableShape {
+    private int x;
+    private Dimension radius;
+
+    public Circle(int x, int r) {
+        this.x = x;
+        this.radius = new Dimension(r);
+    }
+
+    // Implementing deep copy
+    @Override
+    public CloneableShape clone() {
+        try {
+            Circle clonedCircle = (Circle) super.clone();
+            // Crucial: Deep copy the mutable Dimension object
+            clonedCircle.radius = (Dimension) this.radius.clone();
+            return clonedCircle;
+        } catch (CloneNotSupportedException e) {
+            // Should not happen as we implement Cloneable
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Setter for radius to show deep copy effect
+    public void setRadiusValue(int val) {
+        this.radius = new Dimension(val);
+    }
+
+    public int getRadiusValue() {
+        return radius.getValue();
+    }
+}
+
+// Client Test:
+class PrototypeTest {
+    public static void main(String[] args) {
+        Circle original = new Circle(10, 5); // x=10, radius=5
+        Circle cloned = (Circle) original.clone();
+        System.out.println("Original Radius: " + original.getRadiusValue()); // 5
+
+        // Change the clone's internal mutable state
+        cloned.setRadiusValue(15);
+
+        // Check if the original object was affected (Deep Copy Check)
+        System.out.println("Cloned Radius: " + cloned.getRadiusValue()); // 15
+        System.out.println("Original Radius (After change): " + original.getRadiusValue()); // Still 5
+        // If the original was 15, it would be a shallow copy.
+    }
+}
+
+
+##(5.) Refactor a large Worker interface (with work(), eat(), sleep(), get_paid()) to adhere to 
+the Interface Segregation Principle (ISP). Break it into smaller interfaces (Workable, 
+Feedable, Restable, Payable) and implement them in HumanWorker (implements all) 
+and RobotWorker (implements only Workable and Payable).
+
+// 1. Segregated Interfaces (ISP adherence)
+interface Workable {
+    void work();
+    // No other methods like eat() or getPaid()
+}
+
+interface Feedable {
+    void eat();
+}
+
+interface PayAble {
+    void getPaid();
+}
+
+// 2. HumanWorker implements all relevant interfaces
+class HumanWorker implements Workable, Feedable, PayAble {
+    @Override
+    public void work() {
+        System.out.println("Human working on task...");
+    }
+
+    @Override
+    public void eat() {
+        System.out.println("Human eating lunch...");
+    }
+
+    @Override
+    public void getPaid() {
+        System.out.println("Human receiving paycheck...");
+    }
+}
+
+// 3. RobotWorker implements only the relevant interfaces
+class RobotWorker implements Workable, PayAble { // Robot doesn't need to eat/sleep
+    @Override
+    public void work() {
+        System.out.println("Robot working 24/7...");
+    }
+
+    @Override
+    // Robots are paid for maintenance/utility, even if not salary
+    public void getPaid() {
+        System.out.println("Robot needs maintenance budget...");
+    }
+}
+
+// Client Test:
+class ISPTest {
+    public static void manageWork(Workable w) {
+        w.work();
+    }
+
+    public static void manageLunch(Feedable f) {
+        f.eat();
+    }
+
+    public static void main(String[] args) {
+        HumanWorker human = new HumanWorker();
+        RobotWorker robot = new RobotWorker();
+        manageWork(human);
+        manageWork(robot); // Client (manager) can only call work() on the robot
+        manageLunch(human);
+        // manageLunch(robot); // ERROR: Robot does not implement Feedable,
+        // demonstrating ISP
+    }
+}
+
+
+##(6.) Implement the Abstract Factory Pattern to create families of related objects for a 
+mobile phone. Create an abstract factory for MobileCamera and concrete factories for 
+HighResolutionCamera and StandardCamera, each creating related products like PhotoCapturer and VideoRecorder.
+
+// Abstract Products
+interface PhotoCapturer {
+    void capture();
+}
+
+interface VideoRecorder {
+    void record();
+}
+
+// Abstract Factory
+interface MobileCameraFactory {
+    PhotoCapturer createPhotoCapturer();
+
+    VideoRecorder createVideoRecorder();
+}
+
+// Concrete Product Family 1 (High Resolution)
+class HDPhotoCapturer implements PhotoCapturer {
+    @Override
+    public void capture() {
+        System.out.println("Captured photo in 48MP resolution.");
+    }
+}
+
+class HDVideoRecorder implements VideoRecorder {
+    @Override
+    public void record() {
+        System.out.println("Recording video in 4K UHD.");
+    }
+}
+
+// Concrete Factory 1
+class HighResolutionCameraFactory implements MobileCameraFactory {
+    @Override
+    public PhotoCapturer createPhotoCapturer() {
+        return new HDPhotoCapturer();
+    }
+
+    @Override
+    public VideoRecorder createVideoRecorder() {
+        return new HDVideoRecorder();
+    }
+}
+
+// Concrete Factory 2 (Standard)
+class StandardPhotoCapturer implements PhotoCapturer {
+    @Override
+    public void capture() {
+        System.out.println("Captured photo in 12MP resolution.");
+    }
+}
+
+class StandardVideoRecorder implements VideoRecorder {
+    @Override
+    public void record() {
+        System.out.println("Recording video in 1080p.");
+    }
+}
+
+class StandardCameraFactory implements MobileCameraFactory {
+    @Override
+    public PhotoCapturer createPhotoCapturer() {
+        return new StandardPhotoCapturer();
+    }
+
+    @Override
+    public VideoRecorder createVideoRecorder() {
+        return new StandardVideoRecorder();
+    }
+}
+
+// Client Test:
+class MobileClient {
+    public void testCamera(MobileCameraFactory factory) {
+        PhotoCapturer photo = factory.createPhotoCapturer();
+        VideoRecorder video = factory.createVideoRecorder();
+        photo.capture();
+        video.record();
+    }
+}
+
+class AbstractFactoryTest {
+    public static void main(String[] args) {
+        MobileClient client = new MobileClient();
+        System.out.println("--- Using High Resolution Camera ---");
+        client.testCamera(new HighResolutionCameraFactory());
+        System.out.println("\n--- Using Standard Resolution Camera ---");
+        client.testCamera(new StandardCameraFactory());
+    }
+}
+
+
+##(7.) Implement the Memento Pattern for a simple in-memory TextEditor. The editor 
+should have a save() method that captures its current state (text), and an undo() 
+method that restores the last saved state using a separate History (Caretaker) object.
+
+// 1. Memento: The saved state (Immutable)
+class EditorMemento {
+    private final String state;
+
+    public EditorMemento(String state) {
+        this.state = state;
+    }
+
+    public String getSavedState() {
+        return state;
+    }
+}
+
+// 2. Originator: The object whose state is being tracked
+class TextEditor {
+    private String text = "";
+
+    public void type(String words) {
+        text += words;
+        System.out.println("Current Text: " + text);
+    }
+
+    // Creates a Memento (Save State)
+    public EditorMemento save() {
+        return new EditorMemento(text);
+    }
+
+    // Restores state from a Memento (Undo)
+    public void restore(EditorMemento memento) {
+        this.text = memento.getSavedState();
+    }
+
+    public String getText() {
+        return text;
+    }
+}
+
+// 3. Caretaker: Manages history
+class History {
+    private EditorMemento lastMemento;
+
+    public void save(EditorMemento memento) {
+        this.lastMemento = memento;
+    }
+
+    public EditorMemento undo() {
+        return lastMemento;
+    }
+}
+
+// Client Test:
+class MementoTest {
+    public static void main(String[] args) {
+        TextEditor editor = new TextEditor();
+        History history = new History();
+        editor.type("Hello ");
+        history.save(editor.save()); // Save 1
+        editor.type("World! ");
+        history.save(editor.save()); // Save 2
+        editor.type("This is new text.");
+        System.out.println("\n--- UNDO ---");
+        editor.restore(history.undo()); // Restore to Save 2
+        System.out.println("Text after undo: " + editor.getText());
+    }
+}
+
+##(8.) Implement the Strategy Pattern for processing payments in an e-commerce 
+application. Define a PaymentStrategy interface and concrete classes like 
+CreditCardPayment, PayPalPayment, and UpiPayment, allowing the client to switch 
+payment methods at runtime.
+
+// 1. Strategy Interface
+interface PaymentStrategy {
+    void pay(double amount);
+}
+
+// 2. Concrete Strategy 1
+class CreditCardPayment implements PaymentStrategy {
+    private String cardNumber;
+
+    public CreditCardPayment(String card) {
+        this.cardNumber = card;
+    }
+
+    @Override
+    public void pay(double amount) {
+        System.out.println("Paid Rs." + amount + " using Credit Card ending in " +
+                cardNumber.substring(12));
+    }
+}
+
+// 3. Concrete Strategy 2
+class PayPalPayment implements PaymentStrategy {
+    private String email;
+
+    public PayPalPayment(String email) {
+        this.email = email;
+    }
+
+    @Override
+    public void pay(double amount) {
+        System.out.println("Paid Rs." + amount + " using PayPal account: " + email);
+    }
+}
+
+// 4. Context: The class that holds a reference to the strategy
+class ShoppingCart {
+    private PaymentStrategy paymentMethod;
+    private double totalAmount;
+
+    public ShoppingCart(double amount) {
+        this.totalAmount = amount;
+    }
+
+    public void setPaymentStrategy(PaymentStrategy strategy) {
+        this.paymentMethod = strategy;
+    }
+
+    public void checkout() {
+        if (paymentMethod == null) {
+            System.out.println("Error: No payment method selected.");
+            return;
+        }
+        System.out.println("\nProcessing order of Rs." + totalAmount);
+        paymentMethod.pay(totalAmount);
+    }
+}
+
+// Client Test:
+class StrategyTest {
+    public static void main(String[] args) {
+        ShoppingCart cart = new ShoppingCart(1500.75);
+        // Strategy 1: Use Credit Card
+        cart.setPaymentStrategy(new CreditCardPayment("4560123456789012"));
+        cart.checkout();
+        // Strategy 2: Switch to PayPal at runtime
+        cart.setPaymentStrategy(new PayPalPayment("user@example.com"));
+        cart.checkout();
+    }
+}
+
+
+##(9.) You have a Bird class with a fly() method. You then create a Penguin class that 
+inherits from Bird but cannot fly. The fly() method in Penguin throws an error or does 
+nothing, which breaks the expectation that any Bird can fly.
+Refactor the code to adhere to the Liskov Substitution Principle. The Penguin class 
+should not inherit directly from Bird. Create a more general base class or interface for 
+animals that can have different behaviors.
+
+// ===============================
+// ✅ Version 1: LSP-Compliant
+// ===============================
+
+// 1. General interface for all animals
+interface Animal {
+    void eat();
+}
+
+// 2. Interface for animals that can fly
+interface Flyable {
+    void fly();
+}
+
+// 3. Bird class implements both Animal and Flyable
+class Bird implements Animal, Flyable {
+    @Override
+    public void eat() {
+        System.out.println("Bird is eating.");
+    }
+
+    @Override
+    public void fly() {
+        System.out.println("Bird is flying high in the sky!");
+    }
+}
+
+// 4. Penguin class implements only Animal (not Flyable)
+class Penguin implements Animal {
+    @Override
+    public void eat() {
+        System.out.println("Penguin is eating fish.");
+    }
+
+    public void swim() {
+        System.out.println("Penguin is swimming in cold water.");
+    }
+}
+
+// ===============================
+// 🚫 Version 2: Using Custom Exception (Breaks LSP)
+// ===============================
+
+// Custom Exception for non-flying animals
+class CannotFlyException extends Exception {
+    public CannotFlyException(String message) {
+        super(message);
+    }
+}
+
+// FlyableV2 interface that can throw exception
+interface FlyableV2 {
+    void fly() throws CannotFlyException;
+}
+
+// PenguinV2 implements Flyable but throws exception
+class PenguinV2 implements Animal, FlyableV2 {
+    @Override
+    public void eat() {
+        System.out.println("PenguinV2 is eating fish.");
+    }
+
+    @Override
+    public void fly() throws CannotFlyException {
+        throw new CannotFlyException("PenguinV2 can't fly!");
+    }
+}
+
+// ===============================
+// 🧪 Client Test
+// ===============================
+public class LSPTest {
+    public static void main(String[] args) {
+
+        System.out.println("=== ✅ LSP-COMPLIANT DESIGN ===");
+        Bird sparrow = new Bird();
+        sparrow.eat();
+        sparrow.fly();
+
+        System.out.println();
+
+        Penguin penguin = new Penguin();
+        penguin.eat();
+        penguin.swim();
+
+        System.out.println();
+        System.out.println("=== 🚫 NON-LSP EXAMPLE (With Exception) ===");
+
+        PenguinV2 penguinV2 = new PenguinV2();
+        penguinV2.eat();
+
+        try {
+            penguinV2.fly(); // This will throw custom exception
+        } catch (CannotFlyException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}
+
+
+##(10.) Write a java program to implement Proxy Pattern which efficiently manages the loading 
+and displaying of images by introducing a proxy that controls access to the real image object.
+
+// 1. Subject Interface
+interface Image {
+    void display();
+}
+
+// 2. Real Subject - Represents the actual heavy object
+class RealImage implements Image {
+    private String filename;
+
+    public RealImage(String filename) {
+        this.filename = filename;
+        loadFromDisk();
+    }
+
+    private void loadFromDisk() {
+        System.out.println("Loading image from disk: " + filename);
+        // Simulate time-consuming operation
+        try {
+            Thread.sleep(1000); // Simulate 1 second load time
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void display() {
+        System.out.println("Displaying image: " + filename);
+    }
+}
+
+// 3. Proxy - Controls access to RealImage
+class ProxyImage implements Image {
+    private RealImage realImage;
+    private String filename;
+
+    public ProxyImage(String filename) {
+        this.filename = filename;
+    }
+
+    @Override
+    public void display() {
+        // Load image only when needed
+        if (realImage == null) {
+            System.out.println("Creating RealImage object on demand...");
+            realImage = new RealImage(filename);
+        } else {
+            System.out.println("Image already loaded, using cached version.");
+        }
+        realImage.display();
+    }
+}
+
+// 4. Client Test
+public class ProxyPatternTest {
+    public static void main(String[] args) {
+        Image image1 = new ProxyImage("Nature.jpg");
+        Image image2 = new ProxyImage("Mountains.png");
+
+        System.out.println("\n--- First display (Loads from disk) ---");
+        image1.display();
+
+        System.out.println("\n--- Second display (Uses proxy cache) ---");
+        image1.display();
+
+        System.out.println("\n--- Displaying another image ---");
+        image2.display();
+    }
+}
+
+
+##(11.) Write a Java Program to implement Iterator Pattern for Designing Menu like Breakfast,Lunch or Dinner Menu.
+
+import java.util.*;
+
+// MenuItem class (represents one dish)
+class MenuItem {
+    private String name;
+    private double price;
+    private String description;
+
+    public MenuItem(String name, double price, String description) {
+        this.name = name;
+        this.price = price;
+        this.description = description;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public String toString() {
+        return name + " - ₹" + price + " (" + description + ")";
+    }
+}
+
+// Iterator Interface
+interface MenuIterator {
+    boolean hasNext();
+
+    MenuItem next();
+}
+
+// Menu Interface
+interface Menu {
+    MenuIterator createIterator();
+}
+
+// Breakfast Menu
+class BreakfastMenu implements Menu {
+    private List<MenuItem> items = new ArrayList<>();
+
+    public BreakfastMenu() {
+        addItem("Idli-Sambar", 40, "Steamed rice cakes with lentil soup");
+        addItem("Poha", 30, "Flattened rice with spices");
+        addItem("Tea", 15, "Hot Indian tea");
+    }
+
+    public void addItem(String name, double price, String desc) {
+        items.add(new MenuItem(name, price, desc));
+    }
+
+    public MenuIterator createIterator() {
+        return new BreakfastMenuIterator(items);
+    }
+}
+
+// Lunch Menu
+class LunchMenu implements Menu {
+    private MenuItem[] items;
+    private int index = 0;
+
+    public LunchMenu() {
+        items = new MenuItem[5];
+        addItem("Veg Thali", 120, "Complete Indian meal");
+        addItem("Paneer Curry", 150, "Cottage cheese curry");
+        addItem("Dal Rice", 80, "Lentils with rice");
+    }
+
+    public void addItem(String name, double price, String desc) {
+        if (index >= items.length) {
+            System.out.println("Lunch Menu is full!");
+        } else {
+            items[index++] = new MenuItem(name, price, desc);
+        }
+    }
+
+    public MenuIterator createIterator() {
+        return new LunchMenuIterator(items);
+    }
+}
+
+// Dinner Menu
+class DinnerMenu implements Menu {
+    private LinkedList<MenuItem> items = new LinkedList<>();
+
+    public DinnerMenu() {
+        addItem("Chicken Biryani", 180, "Spiced rice with chicken");
+        addItem("Butter Naan", 25, "Soft bread with butter");
+        addItem("Palak Paneer", 140, "Spinach with cottage cheese");
+    }
+
+    public void addItem(String name, double price, String desc) {
+        items.add(new MenuItem(name, price, desc));
+    }
+
+    public MenuIterator createIterator() {
+        return new DinnerMenuIterator(items);
+    }
+}
+
+// Concrete Iterators
+class BreakfastMenuIterator implements MenuIterator {
+    private Iterator<MenuItem> iterator;
+
+    public BreakfastMenuIterator(List<MenuItem> items) {
+        this.iterator = items.iterator();
+    }
+
+    public boolean hasNext() {
+        return iterator.hasNext();
+    }
+
+    public MenuItem next() {
+        return iterator.next();
+    }
+}
+
+class LunchMenuIterator implements MenuIterator {
+    private MenuItem[] items;
+    private int position = 0;
+
+    public LunchMenuIterator(MenuItem[] items) {
+        this.items = items;
+    }
+
+    public boolean hasNext() {
+        return position < items.length && items[position] != null;
+    }
+
+    public MenuItem next() {
+        return items[position++];
+    }
+}
+
+class DinnerMenuIterator implements MenuIterator {
+    private Iterator<MenuItem> iterator;
+
+    public DinnerMenuIterator(LinkedList<MenuItem> items) {
+        this.iterator = items.iterator();
+    }
+
+    public boolean hasNext() {
+        return iterator.hasNext();
+    }
+
+    public MenuItem next() {
+        return iterator.next();
+    }
+}
+
+// Client
+public class setC_1 {
+    public static void main(String[] args) {
+        Menu breakfastMenu = new BreakfastMenu();
+        Menu lunchMenu = new LunchMenu();
+        Menu dinnerMenu = new DinnerMenu();
+
+        System.out.println("=== Breakfast Menu ===");
+        printMenu(breakfastMenu.createIterator());
+
+        System.out.println("\n=== Lunch Menu ===");
+        printMenu(lunchMenu.createIterator());
+
+        System.out.println("\n=== Dinner Menu ===");
+        printMenu(dinnerMenu.createIterator());
+    }
+
+    public static void printMenu(MenuIterator iterator) {
+        while (iterator.hasNext()) {
+            System.out.println(iterator.next());
+        }
+    }
+}
+
+
+
+
+@@@@@____15_Marks_________@@@@@
+
+
+##(4.) Implement the Bridge Design Pattern to separate the abstraction of a Vehicle from its 
+implementation of a Manufacture. Create Car and Bike abstractions, and Produce and Assemble
+implementations. Create vehicles by linking them with a specific manufacture process.
+
+// 1. Implementation Interface (The "Bridge")
+interface ManufactureProcess {
+    void produce();
+
+    void assemble();
+}
+
+// 2. Concrete Implementations
+class CarManufacture implements ManufactureProcess {
+    @Override
+    public void produce() {
+        System.out.print("Producing Car Body...");
+    }
+
+    @Override
+    public void assemble() {
+        System.out.println("Assembling Car Engine and Chassis.");
+    }
+}
+
+class BikeManufacture implements ManufactureProcess {
+    @Override
+    public void produce() {
+        System.out.print("Producing Bike Frame...");
+    }
+
+    @Override
+    public void assemble() {
+        System.out.println("Assembling Bike Wheels and Handlebars.");
+    }
+}
+
+// 3. Abstraction (The Vehicle)
+abstract class Vehicle {
+    protected ManufactureProcess manufacture; // Reference to the Implementation
+
+    public Vehicle(ManufactureProcess manufacture) {
+        this.manufacture = manufacture;
+    }
+
+    public abstract void build();
+}
+
+// 4. Refined Abstractions
+class Sedan extends Vehicle {
+    public Sedan(ManufactureProcess manufacture) {
+        super(manufacture);
+    }
+
+    @Override
+    public void build() {
+        System.out.print("Building Sedan: ");
+        manufacture.produce();
+        manufacture.assemble();
+    }
+}
+
+class SportsBike extends Vehicle {
+    public SportsBike(ManufactureProcess manufacture) {
+        super(manufacture);
+    }
+
+    @Override
+    public void build() {
+        System.out.print("Building Sports Bike: ");
+        manufacture.produce();
+        manufacture.assemble();
+    }
+}
+
+// Client Test:
+class BridgeTest {
+    public static void main(String[] args) {
+        // Abstraction (Sedan) connected to Implementation (CarManufacture)
+        Vehicle sedan = new Sedan(new CarManufacture());
+        sedan.build();
+        // Abstraction (SportsBike) connected to Implementation (BikeManufacture)
+        Vehicle bike = new SportsBike(new BikeManufacture());
+        bike.build();
+
+        // Bridge allows Abstractions to change independently of Implementations.
+        // E.g., You could easily create an SUV (new abstraction)
+        // that still uses the CarManufacture (existing implementation).
+    }
+}
+
+
+##(6.) Implement the Decorator Design Pattern for a coffee ordering system. Define a 
+Coffee interface. Create concrete components like BasicCoffee. Then create 
+decorators like MilkDecorator, SugarDecorator, and SyrupDecorator to 
+dynamically add costs and ingredients to the coffee object.
+
+// 1. Component Interface (The core object)
+interface Coffee {
+    String getDescription();
+
+    double getCost();
+}
+
+// 2. Concrete Component
+class BasicCoffee implements Coffee {
+    @Override
+    public String getDescription() {
+        return "Simple Black Coffee";
+    }
+
+    @Override
+    public double getCost() {
+        return 50.0;
+    }
+}
+
+// 3. Abstract Decorator (Must implement the Component interface)
+abstract class CoffeeDecorator implements Coffee {
+    protected Coffee decoratedCoffee;
+
+    public CoffeeDecorator(Coffee coffee) {
+        this.decoratedCoffee = coffee;
+    }
+
+    @Override
+    public String getDescription() {
+        return decoratedCoffee.getDescription();
+    }
+
+    @Override
+    public double getCost() {
+        return decoratedCoffee.getCost();
+    }
+}
+
+// 4. Concrete Decorators
+class MilkDecorator extends CoffeeDecorator {
+    public MilkDecorator(Coffee coffee) {
+        super(coffee);
+    }
+
+    @Override
+    public String getDescription() {
+        return super.getDescription() + ", with Milk";
+    }
+
+    @Override
+    public double getCost() {
+        return super.getCost() + 15.0; // Added cost
+    }
+}
+
+class SugarDecorator extends CoffeeDecorator {
+    public SugarDecorator(Coffee coffee) {
+        super(coffee);
+    }
+
+    @Override
+    public String getDescription() {
+        return super.getDescription() + ", with Sugar";
+    }
+
+    @Override
+    public double getCost() {
+        return super.getCost() + 5.0;
+    }
+}
+
+// Client Test:
+class DecoratorTest {
+    public static void main(String[] args) {
+        // 1. Order a basic coffee
+        Coffee coffee1 = new BasicCoffee();
+        System.out.println("Order 1: " + coffee1.getDescription() + " | Cost: Rs." + coffee1.getCost());
+        // 2. Order a coffee with milk and sugar (wrapped sequentially)
+        Coffee coffee2 = new BasicCoffee();
+        coffee2 = new MilkDecorator(coffee2); // Decorate with Milk
+        coffee2 = new SugarDecorator(coffee2); // Decorate with Sugar
+        System.out.println("Order 2: " + coffee2.getDescription() + " | Cost: Rs." + coffee2.getCost());
+
+        // Final cost for Order 2: 50 + 15 + 5 = 70.0
+    }
+}
+
+
+##(7.) Implement the Factory Method Pattern for a PizzaStore. Create an abstract 
+PizzaStore with a createPizza() factory method. Create concrete stores like 
+NYPizzaStore and ChicagoPizzaStore, each creating their respective styles of 
+CheesePizza, VeggiePizza, etc.
+
+// 1. Product Abstraction
+abstract class Pizza {
+    protected String name;
+
+    public abstract void prepare();
+
+    public void bake() {
+        System.out.println("Bake for 25 mins...");
+    }
+    // Other common methods...
+}
+
+// 2. Concrete Products
+class NYCheesePizza extends Pizza {
+    public NYCheesePizza() {
+        this.name = "NY Style Sauce and Cheese Pizza";
+    }
+
+    @Override
+    public void prepare() {
+        System.out.println("Preparing " + name + ": Thin crust dough, fresh mozzarella...");
+    }
+}
+
+class ChicagoVeggiePizza extends Pizza {
+    public ChicagoVeggiePizza() {
+        this.name = "Chicago Style Deep Dish Veggie Pizza";
+    }
+
+    @Override
+    public void prepare() {
+        System.out.println("Preparing " + name + ": Thick crust, bell peppers,spinach...");
+    }
+}
+
+// 3. Creator Abstraction (The Factory Method is declared here)
+abstract class PizzaStore {
+    // The Factory Method (Subclasses implement this)
+    protected abstract Pizza createPizza(String type);
+
+    public Pizza orderPizza(String type) {
+        Pizza pizza = createPizza(type); // The factory call
+        pizza.prepare();
+        pizza.bake();
+        return pizza;
+    }
+}
+
+// 4. Concrete Creators (Decides which product to instantiate)
+class NYPizzaStore extends PizzaStore {
+    @Override
+    protected Pizza createPizza(String type) {
+        if (type.equals("cheese")) {
+            return new NYCheesePizza();
+        } else if (type.equals("pepperoni")) {
+            return new NYCheesePizza(); // Simplified
+        } else
+            return null;
+    }
+}
+
+class ChicagoPizzaStore extends PizzaStore {
+    @Override
+    protected Pizza createPizza(String type) {
+        if (type.equals("cheese")) {
+            return new ChicagoVeggiePizza(); // Deep dish cheese is a type of veggie pizza
+        } else if (type.equals("veggie")) {
+            return new ChicagoVeggiePizza();
+        } else
+            return null;
+    }
+}
+
+// Client Test:
+class FactoryMethodTest {
+    public static void main(String[] args) {
+        PizzaStore nyStore = new NYPizzaStore();
+        PizzaStore chicagoStore = new ChicagoPizzaStore();
+        System.out.println("--- Ordering from NY Store ---");
+        nyStore.orderPizza("cheese");
+        System.out.println("\n--- Ordering from Chicago Store ---");
+        chicagoStore.orderPizza("veggie");
+
+        // The client uses the store, not the pizza factory itself.
+    }
+}
+
+
+##(8.) Implement the Observer Design Pattern for a weather monitoring system. Create a 
+WeatherStation (Subject) that maintains a list of Display (Observer) objects. When 
+the weather data changes in the subject, all observer displays are automatically 
+notified and updated.
+
+import java.util.ArrayList;
+import java.util.List;
+
+// 1. Observer Interface (The dependents)
+interface Display {
+    void update(float temperature, float humidity);
+}
+
+// 2. Subject Interface (The source of data)
+interface Subject {
+    void registerObserver(Display d);
+
+    void removeObserver(Display d);
+
+    void notifyObservers();
+}
+
+// 3. Concrete Subject (The Weather Station)
+class WeatherStation implements Subject {
+    private List<Display> observers = new ArrayList<>();
+    private float temperature;
+    private float humidity;
+
+    @Override
+    public void registerObserver(Display d) {
+        observers.add(d);
+    }
+
+    @Override
+    public void removeObserver(Display d) {
+        observers.remove(d);
+    }
+
+    @Override
+    public void notifyObservers() {
+        for (Display display : observers) {
+            display.update(temperature, humidity);
+        }
+    }
+
+    // Method to change the state and notify
+    public void setMeasurements(float temp, float hum) {
+        this.temperature = temp;
+        this.humidity = hum;
+        notifyObservers();
+    }
+}
+
+// 4. Concrete Observer 1
+class CurrentConditionsDisplay implements Display {
+    @Override
+    public void update(float temp, float hum) {
+        System.out.println("Current Conditions: Temp=" + temp + "C, Humidity=" + hum + "%");
+    }
+}
+
+// 5. Concrete Observer 2
+class ForecastDisplay implements Display {
+    @Override
+    public void update(float temp, float hum) {
+        // Simplified forecast logic
+        if (temp > 30) {
+            System.out.println("Forecast: Next day will be HOT.");
+        } else {
+            System.out.println("Forecast: Next day will be pleasant.");
+        }
+    }
+}
+
+// Client Test:
+class ObserverTest {
+    public static void main(String[] args) {
+        WeatherStation station = new WeatherStation();
+        Display current = new CurrentConditionsDisplay();
+        Display forecast = new ForecastDisplay();
+
+        // Register observers
+        station.registerObserver(current);
+        station.registerObserver(forecast);
+        System.out.println("--- First update ---");
+        station.setMeasurements(32.5f, 65.0f); // All observers notified
+        System.out.println("\n--- Second update ---");
+        station.setMeasurements(25.0f, 70.0f); // All observers notified again
+
+        // Remove one observer
+        station.removeObserver(forecast);
+
+        System.out.println("\n--- Third update (Forecast removed) ---");
+        station.setMeasurements(40.0f, 50.0f); // Only CurrentConditions is notified
+    }
+}
+
+
+##(11.) Implement the Command Design Pattern for a simple home automation system's 
+universal remote. Create command objects (TurnOnLightCommand, 
+TurnOffLightCommand, StartFanCommand) and a RemoteControl (Invoker) that 
+can execute, queue, and support a basic undo() operation.
+
+import java.util.Stack;
+
+// 1. Command Interface (Encapsulates the action)
+interface Command {
+    void execute();
+
+    void undo();
+}
+
+// 2. Receiver (The object that knows how to perform the action)
+class Light {
+    public void turnOn() {
+        System.out.println("Light is ON");
+    }
+
+    public void turnOff() {
+        System.out.println("Light is OFF");
+    }
+}
+
+// 3. Concrete Command 1 (Turn On)
+class TurnOnLightCommand implements Command {
+    private Light light;
+
+    public TurnOnLightCommand(Light light) {
+        this.light = light;
+    }
+
+    @Override
+    public void execute() {
+        light.turnOn();
+    }
+
+    @Override
+    public void undo() {
+        light.turnOff();
+    } // Undo means turning off
+}
+
+// 4. Concrete Command 2 (Turn Off)
+class TurnOffLightCommand implements Command {
+    private Light light;
+
+    public TurnOffLightCommand(Light light) {
+        this.light = light;
+    }
+
+    @Override
+    public void execute() {
+        light.turnOff();
+    }
+
+    @Override
+    public void undo() {
+        light.turnOn();
+    } // Undo means turning on
+}
+
+// 5. Invoker (The remote control, queues and executes commands)
+class RemoteControl {
+    private Command slot; // Single slot for simplicity
+    private Stack<Command> history = new Stack<>(); // For Undo
+
+    public void setCommand(Command command) {
+        this.slot = command;
+    }
+
+    public void pressButton() {
+        slot.execute();
+        history.push(slot); // Save command to history for undo
+    }
+
+    public void pressUndo() {
+        if (!history.isEmpty()) {
+            Command lastCommand = history.pop();
+            System.out.print("UNDO: ");
+            lastCommand.undo();
+        } else {
+            System.out.println("Nothing to undo.");
+        }
+    }
+}
+
+// Client Test:
+class CommandTest {
+    public static void main(String[] args) {
+        RemoteControl remote = new RemoteControl();
+        Light livingRoomLight = new Light();
+        // 1. Turn ON the light
+        Command onCommand = new TurnOnLightCommand(livingRoomLight);
+        remote.setCommand(onCommand);
+        remote.pressButton();
+        // 2. Turn OFF the light
+        Command offCommand = new TurnOffLightCommand(livingRoomLight);
+        remote.setCommand(offCommand);
+        remote.pressButton();
+        // 3. Undo the last action (Turn OFF)
+        remote.pressUndo(); // Output: UNDO: Light is ON
+
+        // 4. Undo the previous action (Turn ON)
+        remote.pressUndo(); // Output: UNDO: Light is OFF
+    }
+}
+
+
+##(12.) Implement the Adapter Design Pattern for a Media Player application. You have 
+an old AdvancedMediaPlayer (with playMp4() and playVlc()) and a new 
+MediaPlayer interface (with play(type, filename)). Create a MediaAdapter to 
+make the old advanced player compatible with the new interface.
+
+// 1. Target Interface (The interface the client expects)
+interface MediaPlayer {
+    void play(String audioType, String fileName);
+
+}
+
+// 2. Adaptee (The existing, incompatible class/library)
+class AdvancedMediaPlayer {
+    public void playMp4(String fileName) {
+        System.out.println("Playing MP4 file: " + fileName);
+    }
+
+    public void playVlc(String fileName) {
+        System.out.println("Playing VLC file: " + fileName);
+    }
+}
+
+// 3. Adapter (Converts the Adaptee to the Target)
+class MediaAdapter implements MediaPlayer {
+    private AdvancedMediaPlayer advancedPlayer;
+
+    public MediaAdapter() {
+        this.advancedPlayer = new AdvancedMediaPlayer();
+    }
+
+    // The adapter provides the expected interface method
+    @Override
+    public void play(String audioType, String fileName) {
+        if (audioType.equalsIgnoreCase("mp4")) {
+            advancedPlayer.playMp4(fileName); // Call the Adaptee's specific method
+        } else if (audioType.equalsIgnoreCase("vlc")) {
+            advancedPlayer.playVlc(fileName);
+        } else {
+            System.out.println("Invalid format. Cannot play " + audioType);
+        }
+    }
+}
+
+// 4. Client (Uses the Target Interface)
+class AudioPlayer implements MediaPlayer {
+    private MediaAdapter mediaAdapter;
+
+    @Override
+    public void play(String audioType, String fileName) {
+        // Play MP3 directly (compatible format)
+        if (audioType.equalsIgnoreCase("mp3")) {
+            System.out.println("Playing MP3 file: " + fileName);
+        }
+        // Use the Adapter for incompatible formats
+        else if (audioType.equalsIgnoreCase("vlc") || audioType.equalsIgnoreCase("mp4")) {
+            mediaAdapter = new MediaAdapter();
+            mediaAdapter.play(audioType, fileName); // Delegates call to the Adapter
+        } else {
+            System.out.println("Cannot play media type: " + audioType);
+        }
+    }
+}
+
+// Client Test:
+class AdapterTest {
+    public static void main(String[] args) {
+        AudioPlayer player = new AudioPlayer();
+        player.play("mp3", "test.mp3");
+        player.play("mp4", "movie.mp4"); // Handled by Adapter -> AdvancedMediaPlayer.playMp4
+        player.play("vlc", "clip.vlc"); // Handled by Adapter -> AdvancedMediaPlayer.playVlc
+        player.play("avi", "video.avi");
+    }
+}

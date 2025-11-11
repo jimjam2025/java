@@ -1,0 +1,405 @@
+//1) singleton pattern --  ensure a class has only one instance and provides a global point of access to it
+//file name should  be: TestSingleton.java
+//run : javac TestSingleton.java then run: java TestSingleton
+// (Thread-Safe Logger)
+class Logger {
+    private static volatile Logger instance;
+    private Logger() {} // Private constructor
+
+    public static Logger getInstance() {
+        if (instance == null) {
+            synchronized (Logger.class) {
+                if (instance == null) instance = new Logger();
+            }
+        }
+        return instance;
+    }
+    public void log(String msg) {
+        System.out.println("LOG: " + msg);
+    }
+}
+class TestSingleton {
+    public static void main(String[] args) {
+        Logger l1 = Logger.getInstance();
+        Logger l2 = Logger.getInstance();
+        l1.log("Application started");
+        l2.log("Configuration loaded");
+        System.out.println("Same instance? " + (l1 == l2));
+    }
+}
+
+
+//2)open closed principle OCP
+
+// Program: Open/Closed Principle (OCP)
+interface Shape { double area(); }
+
+class Circle implements Shape {
+    double r;
+    Circle(double r) { this.r = r; }
+    public double area() { return Math.PI * r * r; }
+}
+
+class Square implements Shape {
+    double s;
+    Square(double s) { this.s = s; }
+    public double area() { return s * s; }
+}
+
+class AreaCalculator {
+    double totalArea(Shape[] shapes) {
+        double sum = 0;
+        for (Shape sh : shapes) sum += sh.area();
+        return sum;
+    }
+}
+
+class TestOCP {
+    public static void main(String[] args) {
+        Shape[] shapes = { new Circle(5), new Square(4) };
+        System.out.println("Total Area: " + new AreaCalculator().totalArea(shapes));
+    }
+}
+
+
+//3) single responsibility principle SRP
+
+
+class Student {
+    int rollNo; String name; double marks;
+    Student(int r, String n, double m){ rollNo=r; name=n; marks=m; }
+    double getMarks(){ return marks; }
+    public String toString(){ return rollNo + " - " + name; }
+}
+class GradeCalculator {
+    String grade(Student s){
+        double m = s.getMarks();
+        return (m>=75) ? "A+" : (m>=60) ? "A" : "B";
+    }
+}
+class StudentRepo {
+    void save(Student s){ System.out.println("Saved: " + s.name); }
+}
+class TestSRP {
+    public static void main(String[] args){
+        Student s = new Student(101,"Amit",82.5);
+        GradeCalculator g = new GradeCalculator();
+        StudentRepo r = new StudentRepo();
+        System.out.println(s);
+        System.out.println("Grade: " + g.grade(s));
+        r.save(s);
+    }
+}
+
+
+//4 prototype pattern (deep clone)(deep copy)
+
+interface CloneShape extends Cloneable { CloneShape clone(); }
+
+class Dimension implements Cloneable {
+    int value;
+    Dimension(int v){ value = v; }
+    int get(){ return value; }
+    protected Object clone() throws CloneNotSupportedException { return super.clone(); }
+}
+
+class Circle implements CloneShape {
+    int x; Dimension radius;
+    Circle(int x, int r){ this.x = x; radius = new Dimension(r); }
+
+    public CloneShape clone(){
+        try {
+            Circle c = (Circle) super.clone();
+            c.radius = (Dimension) radius.clone(); // Deep copy
+            return c;
+        } catch(Exception e){ throw new RuntimeException(e); }
+    }
+
+    void setRadius(int v){ radius = new Dimension(v); }
+    int getRadius(){ return radius.get(); }
+}
+
+class TestPrototype {
+    public static void main(String[] args){
+        Circle orig = new Circle(10,5);
+        Circle copy = (Circle) orig.clone();
+        System.out.println("Original Radius: " + orig.getRadius());
+        copy.setRadius(15);
+        System.out.println("Cloned Radius: " + copy.getRadius());
+        System.out.println("Original Radius After Change: " + orig.getRadius());
+    }
+}
+
+
+// 5) interface segregation prototype ISP 
+//to run -- javac ISPTest
+//java ISPTest
+
+interface Workable { void work(); }
+interface Feedable { void eat(); }
+interface Payable { void getPaid(); }
+
+class HumanWorker implements Workable, Feedable, Payable {
+    public void work() { System.out.println("Human working..."); }
+    public void eat() { System.out.println("Human eating..."); }
+    public void getPaid() { System.out.println("Human paid..."); }
+}
+class RobotWorker implements Workable, Payable {
+    public void work() { System.out.println("Robot working..."); }
+    public void getPaid() { System.out.println("Robot maintenance budget..."); }
+}
+class ISPTest {
+    public static void main(String[] args) {
+        HumanWorker human = new HumanWorker();
+        RobotWorker robot = new RobotWorker();
+        human.work(); human.eat(); human.getPaid();
+        robot.work(); robot.getPaid();
+        // robot.eat(); // Not allowed - Robot doesn't eat (ISP)
+    }
+}
+
+
+//6) Abstract factory pattern -- provides an interface for creating families of related objects without specifying their concrete classes
+run : javac Test.java after this command run- java Test
+
+interface Photo { void capture(); }
+interface Video { void record(); }
+
+interface CameraFactory {
+    Photo createPhoto();
+    Video createVideo();
+}
+
+class HDPhoto implements Photo { 
+    public void capture() { System.out.println("48MP Photo"); } 
+}
+class HDVideo implements Video { 
+    public void record() { System.out.println("4K Video"); } 
+}
+class HighResFactory implements CameraFactory {
+    public Photo createPhoto() { return new HDPhoto(); }
+    public Video createVideo() { return new HDVideo(); }
+}
+
+class StdPhoto implements Photo { 
+    public void capture() { System.out.println("12MP Photo"); } 
+}
+class StdVideo implements Video { 
+    public void record() { System.out.println("1080p Video"); } 
+}
+class StandardFactory implements CameraFactory {
+    public Photo createPhoto() { return new StdPhoto(); }
+    public Video createVideo() { return new StdVideo(); }
+}
+
+class Test {
+    public static void main(String[] args) {
+        CameraFactory hd = new HighResFactory();
+        CameraFactory std = new StandardFactory();
+
+        System.out.println("-- High Resolution --");
+        hd.createPhoto().capture(); 
+        hd.createVideo().record();
+
+        System.out.println("-- Standard --");
+        std.createPhoto().capture(); 
+        std.createVideo().record();
+    }
+}
+
+//7 memento pattern -- behavioral pattern that allows an object to save //its internal state and restore it later
+
+// Memento - stores state
+class Memento {
+    private final String state;
+    Memento(String s){ state = s; }
+    String get(){ return state; }
+}
+// Originator - editor
+class Editor {
+    String text = "";
+    void type(String words){ text += words; System.out.println("Text: " + text); }
+    Memento save(){ return new Memento(text); }
+    void restore(Memento m){ text = m.get(); }
+}
+// Caretaker - keeps backup
+class History {
+    Memento last;
+    void save(Memento m){ last = m; }
+    Memento undo(){ return last; }
+}
+// Test
+class TestMemento {
+    public static void main(String[] a){
+        Editor e = new Editor();
+        History h = new History();
+        e.type("Hello ");
+        h.save(e.save());
+        e.type("World! ");
+        h.save(e.save());
+        e.type("New line!");
+        System.out.println("\n--- UNDO ---");
+        e.restore(h.undo());
+        System.out.println("After undo: " + e.text);
+    }
+}
+
+
+//8 Strategy pattern- interface that defines a family of algorithms
+
+// Strategy Interface
+interface Payment {
+    void pay(double amt);
+}
+
+// Concrete Strategies
+class CardPay implements Payment {
+    String card;
+    CardPay(String c){ card = c; }
+    public void pay(double a){
+        System.out.println("Paid Rs." + a + " by Card ending " + card.substring(12));
+    }
+}
+
+class PayPal implements Payment {
+    String email;
+    PayPal(String e){ email = e; }
+    public void pay(double a){
+        System.out.println("Paid Rs." + a + " via PayPal: " + email);
+    }
+}
+// Context
+class Cart {
+    Payment method;
+    double total;
+    Cart(double t){ total = t; }
+    void setMethod(Payment m){ method = m; }
+    void checkout(){
+        if(method==null){ System.out.println("Select payment method!"); return; }
+        System.out.println("\nProcessing Rs." + total);
+        method.pay(total);
+    }
+}
+// Test
+class TestStrategy {
+    public static void main(String[] args){
+        Cart c = new Cart(1500.75);
+        c.setMethod(new CardPay("4560123456789012"));
+        c.checkout();
+        c.setMethod(new PayPal("user@example.com"));
+        c.checkout();
+    }
+}
+
+//9 Liskov Substitution Principle- objects of a superclass should be able to be replaced with objects of a subclass
+
+interface Animal {
+    void move();
+}
+class FlyingBird implements Animal {
+    public void move() {
+        System.out.println("I can fly");
+    }
+}
+class NonFlyingBird implements Animal {
+    public void move() {
+        System.out.println("I walk");
+    }
+}
+class Sparrow extends FlyingBird {}
+class Penguin extends NonFlyingBird {}
+class LSPTest {
+    public static void main(String[] args) {
+        Animal a1 = new Sparrow();
+        Animal a2 = new Penguin();
+        a1.move();
+        a2.move();
+    }
+}
+
+//10 proxy --structural design pattern that acts as a placeholder or substitute for another object to control its access.
+interface Image {
+    void display();
+}
+class RealImage implements Image {
+    private String fileName;
+    public RealImage(String fileName) {
+        this.fileName = fileName;
+        loadFromDisk();
+    }
+    private void loadFromDisk() {
+        System.out.println("Loading " + fileName + " from disk...");
+    }
+    public void display() {
+        System.out.println("Displaying " + fileName);
+    }
+}
+class ProxyImage implements Image {
+    private RealImage realImage;
+    private String fileName;
+    public ProxyImage(String fileName) { this.fileName = fileName; }
+
+    public void display() {
+        if (realImage == null) {          // Load only once
+            realImage = new RealImage(fileName);
+        }
+        realImage.display();
+    }
+}
+class ProxyTest {
+    public static void main(String[] args) {
+        Image img = new ProxyImage("photo.jpg");
+        img.display(); // Loads and displays
+        img.display(); // Displays without loading again
+    }
+}
+
+
+
+
+//11 Iterator Pattern-- provides a way to access the elements (like a list, array)sequentially without exposing its underlying representation. 
+
+
+
+import java.util.*;
+interface IteratorPattern {
+    boolean hasNext();
+    String next();
+}
+interface Menu {
+    IteratorPattern createIterator();
+}
+class BreakfastMenu implements Menu {
+    String[] items = {"Idli", "Poha", "Dosa"};
+    public IteratorPattern createIterator() { return new MenuIterator(items); }
+}
+class LunchMenu implements Menu {
+    String[] items = {"Rice", "Dal", "Roti"};
+    public IteratorPattern createIterator() { return new MenuIterator(items); }
+}
+
+class DinnerMenu implements Menu {
+    String[] items = {"Paneer", "Biryani", "Salad"};
+    public IteratorPattern createIterator() { return new MenuIterator(items); }
+}
+class MenuIterator implements IteratorPattern {
+    String[] items; int index = 0;
+    MenuIterator(String[] items) { this.items = items; }
+    public boolean hasNext() { return index < items.length; }
+    public String next() { return items[index++]; }
+}
+class IteratorTest {
+    public static void main(String[] args) {
+        Menu[] menus = { new BreakfastMenu(), new LunchMenu(), new DinnerMenu() };
+        String[] names = { "Breakfast", "Lunch", "Dinner" };
+
+        for (int i = 0; i < menus.length; i++) {
+            System.out.println(names[i] + " Menu:");
+            IteratorPattern it = menus[i].createIterator();
+            while (it.hasNext())
+                System.out.println("- " + it.next());
+            System.out.println();
+        }
+    }
+}
+
